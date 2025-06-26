@@ -77,6 +77,11 @@ static const Settings defaultSettings = {
     .MMB = {
         // Mindscape Music Board defaults to off because its port is so common
         .basePort = 0xffff
+    },
+    .Volume = {
+        .oplvol = 90,
+        .sbvol = 100,
+        .cdvol = 100
     }
 };
 

@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2022-2024  Ian Scott
+ *  Copyright (C) 2025 Daniel Arnold
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,12 +59,16 @@ uint LED_PIN;
 #include "M62429/M62429.h"
 M62429* m62429;
 
+
+
 #ifdef SOUND_SB
 static uint16_t sb_port_test;
 extern void sbdsp_write(uint8_t address, uint8_t value);
 extern uint8_t sbdsp_read(uint8_t address);
 extern void sbdsp_init();
 extern void sbdsp_process();
+extern void opl_set_volume_scale(uint8_t percent);
+extern void sb_set_volume_scale(uint8_t percent);
 #endif
 #ifdef SOUND_OPL
 #include "opl.h"
@@ -232,6 +237,9 @@ __force_inline void select_picogus(uint8_t value) {
     case MODE_CDSTATUS:
     case MODE_CDLOAD:
     case MODE_CDAUTOADV:
+    case MODE_CDVOL:
+    case MODE_OPLVOL:
+    case MODE_SBVOL:
         break;
     case MODE_CDNAME:
         cur_write = 0;
@@ -412,6 +420,26 @@ __force_inline void write_picogus_high(uint8_t value) {
         cdman_set_autoadvance(settings.CD.autoAdvance);
 #endif
         break;
+
+    case MODE_CDVOL: // Set the volume for CD Audio
+        settings.Volume.cdvol = value;
+#ifdef CDROM
+        cdrom_set_volume_scale(settings.Volume.cdvol);
+#endif
+        break;
+    case MODE_OPLVOL: // Set the volume for Adlib
+        settings.Volume.oplvol = value;
+#ifdef SOUND_SB
+        opl_set_volume_scale(settings.Volume.oplvol);
+#endif
+        break;
+    case MODE_SBVOL: // Set the volume for Sound Blaster
+        settings.Volume.sbvol = value;
+#ifdef SOUND_SB
+        sb_set_volume_scale(settings.Volume.sbvol);
+#endif
+        break;
+
     // For multifw
     case MODE_BOOTMODE:
         settings.startupMode = value;
@@ -565,6 +593,12 @@ __force_inline uint8_t read_picogus_high(void) {
 #endif
     case MODE_CDAUTOADV: // enable joystick
         return settings.CD.autoAdvance;
+    case MODE_CDVOL: // CD audio volume
+        return settings.Volume.cdvol;
+    case MODE_OPLVOL: // Adlib volume
+        return settings.Volume.oplvol;
+    case MODE_SBVOL: // Sound Blaster volume
+        return settings.Volume.sbvol;
     case MODE_HWTYPE: // Hardware version
         return BOARD_TYPE;
     case MODE_FLASH:

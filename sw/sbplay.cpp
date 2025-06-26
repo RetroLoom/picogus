@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2022-2024  Ian Scott
+ *  Copyright (C) 2025 Daniel Arnold
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +43,8 @@ extern uint16_t sbdsp_sample_rate();
 extern uint16_t sbdsp_muted();
 extern audio_fifo_t* sbdsp_fifo_peek();
 #endif // SB_BUFFERLESS
+#include "flash_settings.h"
+extern Settings settings;
 #endif // SOUND_SB
 #if defined(SOUND_SB) || defined(USB_MOUSE) || defined(SOUND_MPU)
 #include "pico_pic.h"
@@ -87,6 +90,38 @@ Maximum number of DSP to process at once should be 64.
 */
 #define SAMPLES_PER_BUFFER 256
 
+int32_t opl_volume = 0x10000; // default 1.0x volume
+int32_t sb_volume = 0x10000; // default 1.0x volume
+
+int32_t set_volume_scale (uint8_t percent) {
+     if (percent > 100)
+        percent = 100;
+
+    int32_t volume = (percent * 65536) / 100;
+    
+    if (percent < 1) 
+        volume = 0;
+
+    return volume;
+}
+
+int32_t scale_sample (int32_t sample, int32_t scale, int clamp) {
+    sample = (sample * scale) >> 16;
+
+    if (clamp)
+        clamp16(sample);
+
+    return sample;
+}
+
+void opl_set_volume_scale(uint8_t percent) {
+    opl_volume = set_volume_scale(percent);
+}
+
+void sb_set_volume_scale(uint8_t percent) {
+    sb_volume = set_volume_scale(percent);
+}
+
 struct audio_buffer_pool *init_audio() {
 
     static audio_format_t audio_format = {
@@ -121,6 +156,10 @@ struct audio_buffer_pool *init_audio() {
     ok = audio_i2s_connect_extra(producer_pool, false, 0, 0, NULL);
     assert(ok);
     audio_i2s_set_enabled(true);
+
+    opl_set_volume_scale(settings.Volume.oplvol);
+    opl_set_volume_scale(settings.Volume.sbvol);
+    
     return producer_pool;
 }
 
@@ -139,7 +178,6 @@ static inline uint32_t fixed_ratio(uint16_t a, uint16_t b) {
 static inline int16_t lerp_fixed(int16_t v0, int16_t v1, uint32_t frac) {
     return v0 + (int16_t)(((int32_t)(v1 - v0) * frac) >> FRAC_BITS);
 }
-
 
 void play_adlib() {
     puts("starting core 1");
@@ -244,9 +282,13 @@ void play_adlib() {
             int32_t opl_sample = lerp_fixed(
                 opl_samples[opl_index & OPL_BUFFER_BITS],
                 opl_samples[(opl_index + 1) & OPL_BUFFER_BITS],
-                opl_frac);
+                opl_frac);            
+           
+            opl_sample = scale_sample(opl_sample << 2, opl_volume, 1);
+
             accum[0] += opl_sample;
             accum[1] += opl_sample;
+
 #if SOUND_SB
             if (!sb_left) {
                 // putchar('t');
@@ -260,11 +302,27 @@ void play_adlib() {
                 }
                 sb_index_old = sb_index;
                 sb_frac = sb_pos & FRAC_MASK;
-                sb_ratio = fixed_ratio(sbdsp_sample_rate(), 44100);
+                //sb_ratio = fixed_ratio(sbdsp_sample_rate(), 44100);
+
+                static uint16_t last_sb_rate = 0;
+                uint16_t current_rate = sbdsp_sample_rate();
+                if (current_rate != last_sb_rate)
+                {
+                    sb_ratio = fixed_ratio(current_rate, 44100);
+                    last_sb_rate = current_rate;
+                }
+
                 sb_pos += sb_ratio;
                 // putchar('p');
                 if (!sbdsp_muted()) {
-                    int16_t sb_sample = sb_fifo->buffer[sb_index & AUDIO_FIFO_BITS];
+                    //int16_t sb_sample = sb_fifo->buffer[sb_index & AUDIO_FIFO_BITS];
+
+                    int16_t *fifo_buf = sb_fifo->buffer;
+                    int16_t sb_sample = fifo_buf[sb_index & AUDIO_FIFO_BITS];
+                    
+                    //sb_sample = (sb_sample * sb_volume) >> 16;
+                    sb_sample = scale_sample((uint32_t)sb_sample, sb_volume, 0);
+
                     accum[0] += sb_sample;
                     accum[1] += sb_sample;
                 }

@@ -17,6 +17,7 @@
  *          Copyright 2018-2021 Miran Grca.
  *          Copyright (C) 2024 Kevin Moonlight
  *          Copyright (C) 2025 Ian Scott
+ *          Copyright (C) 2025 Daniel Arnold
  */
 #include <inttypes.h>
 #include <stdarg.h>
@@ -32,6 +33,7 @@
 #include "cdrom_error_msg.h"
 #include "pico/multicore.h"
 #include "hardware/structs/timer.h"
+#include "../flash_settings.h"
 
 
 /* The addresses sent from the guest are absolute, ie. a LBA of 0 corresponds to a MSF of 00:00:00. Otherwise, the counter displayed by the guest is wrong:
@@ -350,6 +352,36 @@ bool cdrom_audio_callback(cdrom_t *dev, uint32_t len) {
 }
 #endif // USE_CD_AUDIO_FIFO
 
+extern Settings settings;
+int32_t cd_audio_volume = 0x10000;
+#include "../clamp.h"
+
+int32_t set_volume_scale (uint8_t percent) {
+     if (percent > 100)
+        percent = 100;
+
+    int32_t volume = (percent * 65536) / 100;
+    
+    if (percent < 1) 
+        volume = 0;
+
+    return volume;
+}
+
+int32_t scale_sample (int32_t sample, int32_t scale, int clamp) {
+    
+    sample = (sample * scale) >> 16;
+
+    if (clamp)
+        clamp16(sample);
+
+    return sample;
+}
+
+void cdrom_set_volume_scale(uint8_t percent) {
+    cd_audio_volume = set_volume_scale(percent);
+}
+
 uint32_t cdrom_audio_callback_simple(cdrom_t *dev, int16_t *buffer, uint32_t len, bool pad) {
     if (dev->cd_status != CD_STATUS_PLAYING) {
         return 0;
@@ -399,7 +431,14 @@ uint32_t cdrom_audio_callback_simple(cdrom_t *dev, int16_t *buffer, uint32_t len
 
         /* printf("%u\n", samples_to_transfer); */
         // Add samples from sector buffer to FIFO
-        memcpy(buffer + samples_produced, &dev->current_sector_samples[dev->audio_sector_consumed_samples], samples_to_transfer * sizeof(int16_t));
+        //memcpy(buffer + samples_produced, &dev->current_sector_samples[dev->audio_sector_consumed_samples], samples_to_transfer * sizeof(int16_t));
+
+        for (uint32_t i = 0; i < samples_to_transfer; i++)
+        {
+            int32_t sample = dev->current_sector_samples[dev->audio_sector_consumed_samples + i];       
+            buffer[samples_produced + i] = (int16_t)scale_sample(sample, cd_audio_volume, 0);
+        }
+
         samples_produced += samples_to_transfer;
         dev->audio_sector_consumed_samples += samples_to_transfer;
     } // End while (fifo_level < len && ret)
@@ -600,6 +639,8 @@ cdrom_global_init(void)
     memset(&cdrom, 0x00, sizeof(cdrom));
     cdrom.error_str = cdrom_errorstr_get();
     cdrom.current_sector_samples = (int16_t*)cdrom.audio_sector_buffer;
+
+    cdrom_set_volume_scale(settings.Volume.cdvol);
 }
 
 static void

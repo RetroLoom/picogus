@@ -68,6 +68,8 @@ static const char *modenames[8] = {
 #define MODE_MPUFAKE    0x22 // MPU fake all notes off
 
 #define MODE_OPLWAIT    0x30 // Adlib speed sensitive fix
+#define MODE_OPLVOL     0x31 // Adlib volume
+#define MODE_SBVOL      0x32 // Sound Blaster volume
 
 #define MODE_MOUSEPORT  0x40 // Mouse Base port
 #define MODE_MOUSEPROTO 0x41 // Mouse protocol
@@ -87,6 +89,7 @@ static const char *modenames[8] = {
 #define MODE_CDLOAD     0x64 // Load CD image or get loaded image index
 #define MODE_CDNAME     0x65 // Get name of loaded CD image
 #define MODE_CDAUTOADV  0x66 // Set autoadvance for CD image on USB reinsert
+#define MODE_CDVOL      0x67 // Set the volume for CD Audio
 
 #define MODE_DEFAULTS   0xE0 // Select reset to defaults register
 #define MODE_SAVE       0xE1 // Select save settings register
