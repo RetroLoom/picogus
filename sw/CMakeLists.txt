@@ -204,6 +204,7 @@ function(build_gus TARGET_NAME MULTIFW)
     config_target(${TARGET_NAME} ${MULTIFW})
     pico_set_program_name(${TARGET_NAME} "picogus-gus")
     target_sources(${TARGET_NAME} PRIVATE
+        volctrl.cpp
         gusplay.cpp
         isa_dma.c
     )
@@ -299,6 +300,7 @@ function(build_psg TARGET_NAME MULTIFW)
         SOUND_CMS=1
     )
     target_sources(${TARGET_NAME} PRIVATE
+        volctrl.cpp
         square/square.cpp
     )
     target_sources(${TARGET_NAME} PRIVATE psgplay.cpp)

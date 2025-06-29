@@ -286,8 +286,7 @@ void play_adlib() {
                     int16_t *fifo_buf = sb_fifo->buffer;
                     int16_t sb_sample = fifo_buf[sb_index & AUDIO_FIFO_BITS];
                     
-                    //sb_sample = (sb_sample * sb_volume) >> 16;
-                    sb_sample = scale_sample((uint32_t)sb_sample, sb_volume, 0);
+                    sb_sample = scale_sample((int32_t)sb_sample >> 1, sb_volume, 1);
 
                     accum[0] += sb_sample;
                     accum[1] += sb_sample;

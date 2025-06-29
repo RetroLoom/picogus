@@ -66,7 +66,6 @@ extern void sbdsp_write(uint8_t address, uint8_t value);
 extern uint8_t sbdsp_read(uint8_t address);
 extern void sbdsp_init();
 extern void sbdsp_process();
-#include "volctrl.h"
 #endif
 #ifdef SOUND_OPL
 #include "opl.h"
@@ -85,7 +84,6 @@ extern "C" void mke_init();
 
 #include "cdrom/cdrom.h"
 #include "cdrom/cdrom_image_manager.h"
-#include "volctrl.h"
 cdrom_t cdrom;
 
 static uint32_t cur_read_idx;
@@ -93,7 +91,6 @@ static uint32_t cur_read_idx;
 
 #ifdef SOUND_GUS
 #include "gus-x.cpp"
-
 #include "isa_dma.h"
 dma_inst_t dma_config;
 static uint16_t gus_port_test;
@@ -142,6 +139,10 @@ uint8_t joystate_bin;
 #endif
 #ifdef USB_ONLY
 void play_usb(void);
+#endif
+
+#if SOUND_GUS || SOUND_SB || SOUND_OPL || CDROM || SOUND_TANDY || SOUND_CMS
+#include "volctrl.h"
 #endif
 
 
@@ -423,7 +424,8 @@ __force_inline void write_picogus_high(uint8_t value) {
 
     case MODE_MAINVOL: // Set the volume for CD Audio
         settings.Volume.mainvol = value;
-#ifdef CDROM
+
+#if SOUND_GUS || SOUND_SB || SOUND_OPL || CDROM || SOUND_TANDY || SOUND_CMS
         set_volume(MODE_MAINVOL);
 #endif
         break;
