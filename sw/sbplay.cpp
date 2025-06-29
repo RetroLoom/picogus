@@ -1,6 +1,5 @@
 /*
  *  Copyright (C) 2022-2024  Ian Scott
- *  Copyright (C) 2025 Daniel Arnold
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,6 +28,7 @@
 
 #include "pico/stdlib.h"
 #include "pico/audio_i2s.h"
+#include "volctrl.h"
 
 #include "opl.h"
 extern "C" void OPL_Pico_simple(int16_t *buffer, uint32_t nsamples);
@@ -43,8 +43,6 @@ extern uint16_t sbdsp_sample_rate();
 extern uint16_t sbdsp_muted();
 extern audio_fifo_t* sbdsp_fifo_peek();
 #endif // SB_BUFFERLESS
-#include "flash_settings.h"
-extern Settings settings;
 #endif // SOUND_SB
 #if defined(SOUND_SB) || defined(USB_MOUSE) || defined(SOUND_MPU)
 #include "pico_pic.h"
@@ -90,38 +88,6 @@ Maximum number of DSP to process at once should be 64.
 */
 #define SAMPLES_PER_BUFFER 256
 
-int32_t opl_volume = 0x10000; // default 1.0x volume
-int32_t sb_volume = 0x10000; // default 1.0x volume
-
-int32_t set_volume_scale (uint8_t percent) {
-     if (percent > 100)
-        percent = 100;
-
-    int32_t volume = (percent * 65536) / 100;
-    
-    if (percent < 1) 
-        volume = 0;
-
-    return volume;
-}
-
-int32_t scale_sample (int32_t sample, int32_t scale, int clamp) {
-    sample = (sample * scale) >> 16;
-
-    if (clamp)
-        clamp16(sample);
-
-    return sample;
-}
-
-void opl_set_volume_scale(uint8_t percent) {
-    opl_volume = set_volume_scale(percent);
-}
-
-void sb_set_volume_scale(uint8_t percent) {
-    sb_volume = set_volume_scale(percent);
-}
-
 struct audio_buffer_pool *init_audio() {
 
     static audio_format_t audio_format = {
@@ -157,8 +123,8 @@ struct audio_buffer_pool *init_audio() {
     assert(ok);
     audio_i2s_set_enabled(true);
 
-    opl_set_volume_scale(settings.Volume.oplvol);
-    opl_set_volume_scale(settings.Volume.sbvol);
+    set_volume(MODE_OPLVOL);
+    set_volume(MODE_SBVOL);
     
     return producer_pool;
 }

@@ -1,6 +1,5 @@
 /*
  *  Copyright (C) 2022-2024  Ian Scott
- *  Copyright (C) 2025 Daniel Arnold
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,8 +66,7 @@ extern void sbdsp_write(uint8_t address, uint8_t value);
 extern uint8_t sbdsp_read(uint8_t address);
 extern void sbdsp_init();
 extern void sbdsp_process();
-extern void opl_set_volume_scale(uint8_t percent);
-extern void sb_set_volume_scale(uint8_t percent);
+#include "volctrl.h"
 #endif
 #ifdef SOUND_OPL
 #include "opl.h"
@@ -87,6 +85,7 @@ extern "C" void mke_init();
 
 #include "cdrom/cdrom.h"
 #include "cdrom/cdrom_image_manager.h"
+#include "volctrl.h"
 cdrom_t cdrom;
 
 static uint32_t cur_read_idx;
@@ -424,19 +423,19 @@ __force_inline void write_picogus_high(uint8_t value) {
     case MODE_CDVOL: // Set the volume for CD Audio
         settings.Volume.cdvol = value;
 #ifdef CDROM
-        cdrom_set_volume_scale(settings.Volume.cdvol);
+        set_volume(MODE_CDVOL);
 #endif
         break;
     case MODE_OPLVOL: // Set the volume for Adlib
         settings.Volume.oplvol = value;
 #ifdef SOUND_SB
-        opl_set_volume_scale(settings.Volume.oplvol);
+        set_volume(MODE_OPLVOL);
 #endif
         break;
     case MODE_SBVOL: // Set the volume for Sound Blaster
         settings.Volume.sbvol = value;
 #ifdef SOUND_SB
-        sb_set_volume_scale(settings.Volume.sbvol);
+        set_volume(MODE_SBVOL);
 #endif
         break;
 

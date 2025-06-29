@@ -17,7 +17,6 @@
  *          Copyright 2018-2021 Miran Grca.
  *          Copyright (C) 2024 Kevin Moonlight
  *          Copyright (C) 2025 Ian Scott
- *          Copyright (C) 2025 Daniel Arnold
  */
 #include <inttypes.h>
 #include <stdarg.h>
@@ -33,7 +32,7 @@
 #include "cdrom_error_msg.h"
 #include "pico/multicore.h"
 #include "hardware/structs/timer.h"
-#include "../flash_settings.h"
+#include "../volctrl.h"
 
 
 /* The addresses sent from the guest are absolute, ie. a LBA of 0 corresponds to a MSF of 00:00:00. Otherwise, the counter displayed by the guest is wrong:
@@ -352,36 +351,6 @@ bool cdrom_audio_callback(cdrom_t *dev, uint32_t len) {
 }
 #endif // USE_CD_AUDIO_FIFO
 
-extern Settings settings;
-int32_t cd_audio_volume = 0x10000;
-#include "../clamp.h"
-
-int32_t set_volume_scale (uint8_t percent) {
-     if (percent > 100)
-        percent = 100;
-
-    int32_t volume = (percent * 65536) / 100;
-    
-    if (percent < 1) 
-        volume = 0;
-
-    return volume;
-}
-
-int32_t scale_sample (int32_t sample, int32_t scale, int clamp) {
-    
-    sample = (sample * scale) >> 16;
-
-    if (clamp)
-        clamp16(sample);
-
-    return sample;
-}
-
-void cdrom_set_volume_scale(uint8_t percent) {
-    cd_audio_volume = set_volume_scale(percent);
-}
-
 uint32_t cdrom_audio_callback_simple(cdrom_t *dev, int16_t *buffer, uint32_t len, bool pad) {
     if (dev->cd_status != CD_STATUS_PLAYING) {
         return 0;
@@ -640,7 +609,7 @@ cdrom_global_init(void)
     cdrom.error_str = cdrom_errorstr_get();
     cdrom.current_sector_samples = (int16_t*)cdrom.audio_sector_buffer;
 
-    cdrom_set_volume_scale(settings.Volume.cdvol);
+    set_volume(MODE_CDVOL);
 }
 
 static void
