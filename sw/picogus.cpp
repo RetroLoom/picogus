@@ -236,6 +236,7 @@ __force_inline void select_picogus(uint8_t value) {
     case MODE_CDSTATUS:
     case MODE_CDLOAD:
     case MODE_CDAUTOADV:
+    case MODE_MAINVOL:
     case MODE_CDVOL:
     case MODE_OPLVOL:
     case MODE_SBVOL:
@@ -420,10 +421,10 @@ __force_inline void write_picogus_high(uint8_t value) {
 #endif
         break;
 
-    case MODE_CDVOL: // Set the volume for CD Audio
-        settings.Volume.cdvol = value;
+    case MODE_MAINVOL: // Set the volume for CD Audio
+        settings.Volume.mainvol = value;
 #ifdef CDROM
-        set_volume(MODE_CDVOL);
+        set_volume(MODE_MAINVOL);
 #endif
         break;
     case MODE_OPLVOL: // Set the volume for Adlib
@@ -436,6 +437,12 @@ __force_inline void write_picogus_high(uint8_t value) {
         settings.Volume.sbvol = value;
 #ifdef SOUND_SB
         set_volume(MODE_SBVOL);
+#endif
+        break;
+        case MODE_CDVOL: // Set the volume for CD Audio
+        settings.Volume.cdvol = value;
+#ifdef CDROM
+        set_volume(MODE_CDVOL);
 #endif
         break;
 
@@ -592,12 +599,14 @@ __force_inline uint8_t read_picogus_high(void) {
 #endif
     case MODE_CDAUTOADV: // enable joystick
         return settings.CD.autoAdvance;
-    case MODE_CDVOL: // CD audio volume
-        return settings.Volume.cdvol;
+    case MODE_MAINVOL: // CD audio volume
+        return settings.Volume.mainvol;
     case MODE_OPLVOL: // Adlib volume
         return settings.Volume.oplvol;
     case MODE_SBVOL: // Sound Blaster volume
         return settings.Volume.sbvol;
+    case MODE_CDVOL: // CD audio volume
+        return settings.Volume.cdvol;
     case MODE_HWTYPE: // Hardware version
         return BOARD_TYPE;
     case MODE_FLASH:

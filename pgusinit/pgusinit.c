@@ -42,6 +42,7 @@ static void usage(card_mode_t mode, bool print_all) {
     printf("   /defaults     - set all settings for all modes to defaults\n");
     printf("   /wtvol x      - set volume of WT header. 0-100, Default 100 (2.0 cards only)\n");
     printf("   /joy 1|0      - enable/disable USB joystick support, Default: 0\n");
+    printf("   /mainvol x    - set the main audio volume: 0 - 100%\n");
     //     "...............................................................................\n"
     printf("MPU-401 settings:\n");
     printf("   /mpuport x    - set the base port of the MPU-401. Default: 330, 0 to disable\n");
@@ -838,6 +839,10 @@ int main(int argc, char* argv[]) {
             process_bool_opt(tmp_uint8);
             outp(CONTROL_PORT, MODE_CDAUTOADV); // Select CD image autoadvance register
             outp(DATA_PORT_HIGH, tmp_uint8);
+        } else if (stricmp(argv[i], "/mainvol") == 0) {
+            process_port_opt(tmp_uint16);
+            outp(CONTROL_PORT, MODE_MAINVOL); // Set the volume for Sound Blaster
+            outp(DATA_PORT_HIGH, tmp_uint16);
         } else if (stricmp(argv[i], "/oplvol") == 0) {
             process_port_opt(tmp_uint16);
             outp(CONTROL_PORT, MODE_OPLVOL); // Set the volume for Sound Blaster
@@ -986,13 +991,19 @@ int main(int argc, char* argv[]) {
             printf("%s)\n", tmp_uint8 ? ", wait on" : "");
             outp(CONTROL_PORT, MODE_OPLVOL); // Select Adlib volume register
             uint16_t tmp_uint8 = inp(DATA_PORT_HIGH);
-            printf("Adlib Volume: %x    ", tmp_uint8);
+            printf("Volume: ");
+            printf("Adlib: %x    ", tmp_uint8);
         } else {
             printf("(AdLib port disabled)\n");
+            printf("Volume: ");
         }
         outp(CONTROL_PORT, MODE_SBVOL); // Select Sound Blaster volume register
-        uint16_t tmp_uint8 = inp(DATA_PORT_HIGH);
-        printf("Sound Blaster Volume: %x%\n", tmp_uint8);
+        uint8_t tmp_uint8 = inp(DATA_PORT_HIGH);
+        printf("Sound Blaster: %x    ", tmp_uint8);
+
+        outp(CONTROL_PORT, MODE_MAINVOL); // Select Sound Blaster volume register
+        tmp_uint8 = inp(DATA_PORT_HIGH);
+        printf("Main: %x    \n", tmp_uint8);
 
         print_cdemu_status();
         break;

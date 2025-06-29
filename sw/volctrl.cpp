@@ -29,6 +29,7 @@ extern Settings settings;
 int32_t opl_volume = 0x10000; // default 1.0x volume
 int32_t sb_volume = 0x10000; // default 1.0x volume
 int32_t cd_audio_volume = 0x10000; // default 1.0x volume
+int32_t main_volume = 0x10000; // default 1.0x volume
 
 int32_t set_volume_scale (uint8_t percent) {
      if (percent > 100)
@@ -54,6 +55,9 @@ int32_t scale_sample (int32_t sample, int32_t scale, int clamp) {
 void set_volume(uint16_t mode) {
 
     switch (mode){
+        case MODE_MAINVOL:
+            main_volume = set_volume_scale(settings.Volume.mainvol);
+            break;
         case MODE_OPLVOL:
             opl_volume = set_volume_scale(settings.Volume.oplvol);
             break;
