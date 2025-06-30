@@ -79,10 +79,12 @@ static const Settings defaultSettings = {
         .basePort = 0xffff
     },
     .Volume = {
-        .mainvol = 90,
-        .oplvol = 90,
-        .sbvol = 100,
-        .cdvol = 100
+        .mainVol = 100,
+        .oplVol = 90,
+        .sbVol = 100,
+        .cdVol = 100,
+        .gusVol = 100,
+        .psgVol = 80
     }
 };
 

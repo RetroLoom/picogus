@@ -238,9 +238,11 @@ __force_inline void select_picogus(uint8_t value) {
     case MODE_CDLOAD:
     case MODE_CDAUTOADV:
     case MODE_MAINVOL:
-    case MODE_CDVOL:
     case MODE_OPLVOL:
     case MODE_SBVOL:
+    case MODE_CDVOL:
+    case MODE_GUSVOL:
+    case MODE_PSGVOL:
         break;
     case MODE_CDNAME:
         cur_write = 0;
@@ -423,28 +425,40 @@ __force_inline void write_picogus_high(uint8_t value) {
         break;
 
     case MODE_MAINVOL: // Set the volume for CD Audio
-        settings.Volume.mainvol = value;
+        settings.Volume.mainVol = value;
 
 #if SOUND_GUS || SOUND_SB || SOUND_OPL || CDROM || SOUND_TANDY || SOUND_CMS
         set_volume(MODE_MAINVOL);
 #endif
         break;
     case MODE_OPLVOL: // Set the volume for Adlib
-        settings.Volume.oplvol = value;
+        settings.Volume.oplVol = value;
 #ifdef SOUND_SB
         set_volume(MODE_OPLVOL);
 #endif
         break;
     case MODE_SBVOL: // Set the volume for Sound Blaster
-        settings.Volume.sbvol = value;
+        settings.Volume.sbVol = value;
 #ifdef SOUND_SB
         set_volume(MODE_SBVOL);
 #endif
         break;
         case MODE_CDVOL: // Set the volume for CD Audio
-        settings.Volume.cdvol = value;
+        settings.Volume.cdVol = value;
 #ifdef CDROM
         set_volume(MODE_CDVOL);
+#endif
+        break;
+        case MODE_GUSVOL: // Set the volume for GUS
+        settings.Volume.gusVol = value;
+#ifdef SOUND_GUS
+        set_volume(MODE_GUSVOL);
+#endif
+        break;
+        case MODE_PSGVOL: // Set the volume for PSG
+        settings.Volume.psgVol = value;
+#if SOUND_PSG || SOUND_TANDY || SOUND_CMS
+        set_volume(MODE_PSGVOL);
 #endif
         break;
 
@@ -602,13 +616,17 @@ __force_inline uint8_t read_picogus_high(void) {
     case MODE_CDAUTOADV: // enable joystick
         return settings.CD.autoAdvance;
     case MODE_MAINVOL: // CD audio volume
-        return settings.Volume.mainvol;
+        return settings.Volume.mainVol;
     case MODE_OPLVOL: // Adlib volume
-        return settings.Volume.oplvol;
+        return settings.Volume.oplVol;
     case MODE_SBVOL: // Sound Blaster volume
-        return settings.Volume.sbvol;
+        return settings.Volume.sbVol;
     case MODE_CDVOL: // CD audio volume
-        return settings.Volume.cdvol;
+        return settings.Volume.cdVol;
+    case MODE_GUSVOL: // GUS volume
+        return settings.Volume.gusVol;
+    case MODE_PSGVOL: // PSG volume
+        return settings.Volume.psgVol;
     case MODE_HWTYPE: // Hardware version
         return BOARD_TYPE;
     case MODE_FLASH:
@@ -623,12 +641,16 @@ __force_inline uint8_t read_picogus_high(void) {
 void processSettings(void) {
 #if defined(SOUND_GUS)
     settings.startupMode = GUS_MODE;
+    set_volume(MODE_GUSVOL);
 #elif (SOUND_TANDY || SOUND_CMS)
     settings.startupMode = PSG_MODE;
+    set_volume(MODE_PSGVOL);
 #elif defined(SOUND_SB)
     settings.startupMode = SB_MODE;
+    set_volume(MODE_SBVOL);
 #elif defined(SOUND_OPL)
     settings.startupMode = ADLIB_MODE;
+    set_volume(MODE_OPLVOL);
 #elif defined(MPU_ONLY)
     settings.startupMode = MPU_MODE;
 #elif defined(USB_ONLY)

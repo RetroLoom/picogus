@@ -58,6 +58,7 @@ static void usage(card_mode_t mode, bool print_all) {
         printf("                 Specifying 0 restores the GUS default behavior.\n");
         printf("                 (increase to fix games with streaming audio like Doom)\n");
         printf("   /gus44k 1|0 - Fixed 44.1kHz output for all active voice #s [EXPERIMENTAL]\n");
+        printf("   /gusvol x   - set the GUS audio volume: 0 - 100\n");
     }
     if (mode == SB_MODE || print_all) {
         //     "...............................................................................\n"
@@ -84,11 +85,13 @@ static void usage(card_mode_t mode, bool print_all) {
         //     "...............................................................................\n"
         printf("Tandy settings:\n");
         printf("   /tandyport x - set the base port of the Tandy 3-voice. Default: 2C0\n");
+        printf("   /psgvol x    - set the PSG audio volume: 0 - 100\n");
     }
     if (mode == PSG_MODE || print_all) {
         //     "...............................................................................\n"
         printf("CMS settings:\n");
         printf("   /cmsport x - set the base port of the CMS. Default: 220\n");
+        printf("   /psgvol x  - set the PSG audio volume: 0 - 100\n");
     }
     if (mode == USB_MODE || mode == PSG_MODE || mode == ADLIB_MODE || print_all) {
         //     "...............................................................................\n"
@@ -886,7 +889,31 @@ int main(int argc, char* argv[]) {
                 return 4;
             }
             outp(CONTROL_PORT, MODE_CDVOL); // Set the volume for CD Audio
+            outp(DATA_PORT_HIGH, tmp_uint8); 
+        } else if (stricmp(argv[i], "/gusvol") == 0) {
+            if (i + 1 >= argc) {
+                usage(mode, false);
+                return 255;
+            }
+            e = sscanf(argv[++i], "%hhu", &tmp_uint8);
+            if (e != 1 || tmp_uint8 > 100) {
+                usage(mode, false);
+                return 4;
+            }
+            outp(CONTROL_PORT, MODE_GUSVOL); // Set the volume for GUS
             outp(DATA_PORT_HIGH, tmp_uint8);   
+        } else if (stricmp(argv[i], "/psgvol") == 0) {
+            if (i + 1 >= argc) {
+                usage(mode, false);
+                return 255;
+            }
+            e = sscanf(argv[++i], "%hhu", &tmp_uint8);
+            if (e != 1 || tmp_uint8 > 100) {
+                usage(mode, false);
+                return 4;
+            }
+            outp(CONTROL_PORT, MODE_PSGVOL); // Set the volume for PSG
+            outp(DATA_PORT_HIGH, tmp_uint8);     
         } else {
             printf("Unknown option: %s\n", argv[i]);
             usage(mode, false);
@@ -983,9 +1010,11 @@ int main(int argc, char* argv[]) {
         outp(CONTROL_PORT, MODE_GUSPORT); // Select port register
         tmp_uint16 = inpw(DATA_PORT_LOW); // Get port
         printf("Running in GUS mode on port %x\n", tmp_uint16);
-        outp(CONTROL_PORT, MODE_MAINVOL); // Select Adlib volume register
+        outp(CONTROL_PORT, MODE_GUSVOL); // Select GUS volume register
         tmp_uint8 = inp(DATA_PORT_HIGH);
-        printf("Volume: %u\n", tmp_uint8);
+        outp(CONTROL_PORT, MODE_MAINVOL); // Select Main volume register
+        tmp_uint16 = inp(DATA_PORT_HIGH);
+        printf("Volume:     GUS: %u     Main: %u\n", tmp_uint8, tmp_uint16);
         break;
     case ADLIB_MODE:
         outp(CONTROL_PORT, MODE_OPLPORT); // Select port register
@@ -1009,6 +1038,11 @@ int main(int argc, char* argv[]) {
         outp(CONTROL_PORT, MODE_CMSPORT); // Select port register
         tmp_uint16 = inpw(DATA_PORT_LOW); // Get port
         printf("CMS/Game Blaster on port %x)\n", tmp_uint16);
+        outp(CONTROL_PORT, MODE_PSGVOL); // Select PSG volume register
+        tmp_uint8 = inp(DATA_PORT_HIGH);
+        outp(CONTROL_PORT, MODE_MAINVOL); // Select Main volume register
+        tmp_uint16 = inp(DATA_PORT_HIGH);
+        printf("Volume:     PSG: %u     Main: %u\n", tmp_uint8, tmp_uint16);
         break;
     case SB_MODE:
         if (init_sb()) {

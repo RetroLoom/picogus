@@ -29,13 +29,17 @@ extern Settings settings;
 int32_t opl_volume = 0x10000; // default 1.0x volume
 int32_t sb_volume = 0x10000; // default 1.0x volume
 int32_t cd_audio_volume = 0x10000; // default 1.0x volume
-int32_t main_volume = 0x10000; // default 1.0x volume
+int32_t gus_volume = 0x10000; // default 1.0x volume
+int32_t psg_volume = 0x10000; // default 1.0x volume
+
 
 int32_t set_volume_scale (uint8_t percent) {
      if (percent > 100)
         percent = 100;
 
-    int32_t volume = (percent * 65536) / 100;
+    uint8_t delta = 100 - settings.Volume.mainVol;
+
+    int32_t volume = ((percent - delta) * 65536) / 100;
     
     if (percent < 1) 
         volume = 0;
@@ -56,16 +60,26 @@ void set_volume(uint16_t mode) {
 
     switch (mode){
         case MODE_MAINVOL:
-            main_volume = set_volume_scale(settings.Volume.mainvol);
+            set_volume(MODE_OPLVOL);
+            set_volume(MODE_SBVOL);
+            set_volume(MODE_CDVOL);
+            set_volume(MODE_GUSVOL);
+            set_volume(MODE_PSGVOL);
             break;
         case MODE_OPLVOL:
-            opl_volume = set_volume_scale(settings.Volume.oplvol);
+            opl_volume = set_volume_scale(settings.Volume.oplVol);
             break;
         case MODE_SBVOL:
-            sb_volume = set_volume_scale(settings.Volume.sbvol);
+            sb_volume = set_volume_scale(settings.Volume.sbVol);
             break;
         case MODE_CDVOL:
-            cd_audio_volume = set_volume_scale(settings.Volume.sbvol);
+            cd_audio_volume = set_volume_scale(settings.Volume.sbVol);
+            break;
+        case MODE_GUSVOL:
+            gus_volume = set_volume_scale(settings.Volume.gusVol);
+            break;
+        case MODE_PSGVOL:
+            psg_volume = set_volume_scale(settings.Volume.psgVol);
             break;
     }   
 }

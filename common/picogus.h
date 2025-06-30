@@ -88,10 +88,12 @@ static const char *modenames[8] = {
 #define MODE_CDNAME     0x65 // Get name of loaded CD image
 #define MODE_CDAUTOADV  0x66 // Set autoadvance for CD image on USB reinsert
 
-#define MODE_MAINVOL    0x70 // Set the volume for Main ouput
+#define MODE_MAINVOL    0x70 // Main Volume
 #define MODE_OPLVOL     0x71 // Adlib volume
 #define MODE_SBVOL      0x72 // Sound Blaster volume
-#define MODE_CDVOL      0x73 // Set the volume for CD Audio
+#define MODE_CDVOL      0x73 // CD Audio Volume
+#define MODE_GUSVOL     0x74 // GUS Volume
+#define MODE_PSGVOL     0x75 // PSG Volume
 
 #define MODE_DEFAULTS   0xE0 // Select reset to defaults register
 #define MODE_SAVE       0xE1 // Select save settings register

@@ -29,7 +29,9 @@ extern "C" {
 extern int32_t opl_volume;
 extern int32_t sb_volume;
 extern int32_t cd_audio_volume;
-extern int32_t main_volume;
+extern int32_t gus_volume;
+extern int32_t psg_volume;
+
 
 extern int32_t set_volume_scale (uint8_t percent);
 extern int32_t scale_sample (int32_t sample, int32_t scale, int clamp);

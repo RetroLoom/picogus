@@ -123,9 +123,6 @@ struct audio_buffer_pool *init_audio() {
     assert(ok);
     audio_i2s_set_enabled(true);
 
-    set_volume(MODE_OPLVOL);
-    set_volume(MODE_SBVOL);
-    
     return producer_pool;
 }
 
@@ -293,11 +290,8 @@ void play_adlib() {
                 }
             }
 #endif // SOUND_SB
-            //samples[i << 1] = clamp16(accum[0]);
-            //samples[(i << 1) + 1] = clamp16(accum[1]);
-            
-            samples[i << 1] = scale_sample(accum[0], main_volume, 1);
-            samples[(i << 1) + 1] = scale_sample(accum[1], main_volume, 1);
+            samples[i << 1] = clamp16(accum[0]);
+            samples[(i << 1) + 1] = clamp16(accum[1]);
         }
         buffer->sample_count = SAMPLES_PER_BUFFER;
 #else // !SB_BUFFERLESS

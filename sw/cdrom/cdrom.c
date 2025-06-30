@@ -608,8 +608,6 @@ cdrom_global_init(void)
     memset(&cdrom, 0x00, sizeof(cdrom));
     cdrom.error_str = cdrom_errorstr_get();
     cdrom.current_sector_samples = (int16_t*)cdrom.audio_sector_buffer;
-
-    set_volume(MODE_CDVOL);
 }
 
 static void
