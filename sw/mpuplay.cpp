@@ -25,6 +25,7 @@ extern Settings settings;
 
 #ifdef USB_STACK
 #include "tusb.h"
+#include "joy.h"
 #endif
 
 #include "mpu401/export.h"
@@ -48,6 +49,7 @@ void play_mpu() {
 #ifdef USB_STACK
         // Service TinyUSB events
         tuh_task();
+        usb_hotplug_task();
 #endif
     }
 }

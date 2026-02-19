@@ -38,6 +38,10 @@
 
 board_type_t BOARD_TYPE;
 
+#ifdef USB_JOYSTICK
+#include "usb_hid/joy_settings.h"
+#endif
+
 #ifdef PSRAM
 #include "psram_spi.h"
 psram_spi_inst_t psram_spi;
@@ -133,6 +137,7 @@ void play_ne2000(void);
 #ifdef USB_JOYSTICK
 #include "usb_hid/joy.h"
 extern "C" joystate_struct_t joystate_struct;
+extern "C" volatile uint8_t joy_last_btn;
 uint8_t joystate_bin;
 #include "hardware/pwm.h"
 #endif
@@ -189,6 +194,26 @@ __force_inline void select_picogus(uint8_t value) {
         basePort_low = 0;
         break;
     case CMD_JOYEN: // enable joystick
+        break;
+    case CMD_JOY_PROFILE:
+    case CMD_JOY_JOY1_DZ:
+    case CMD_JOY_JOY2_DZ:
+    case CMD_JOY_FLAGS:
+    case CMD_JOY_BTN1:
+    case CMD_JOY_BTN2:
+    case CMD_JOY_BTN3:
+    case CMD_JOY_BTN4:
+    case CMD_JOY_JOY1_LAYOUT:
+    case CMD_JOY_JOY1_FLAGS:
+    case CMD_JOY_JOY2_LAYOUT:
+    case CMD_JOY_JOY2_FLAGS:
+        break;
+    case CMD_JOY_LAST_BTN:
+        break;
+    case CMD_JOY_EFF_BTN1:
+    case CMD_JOY_EFF_BTN2:
+    case CMD_JOY_EFF_BTN3:
+    case CMD_JOY_EFF_BTN4:
         break;
     case CMD_GUSBUF: // Audio buffer size
     case CMD_GUSDMA: // DMA interval
@@ -314,6 +339,23 @@ __force_inline void write_picogus_high(uint8_t value) {
     case CMD_JOYEN: // enable joystick
         settings.Joy.basePort = value ? 0x201u : 0xffff;
         break;
+#ifdef USB_JOYSTICK
+    case CMD_JOY_PROFILE:
+    case CMD_JOY_JOY1_DZ:
+    case CMD_JOY_JOY2_DZ:
+    case CMD_JOY_FLAGS:
+    case CMD_JOY_BTN1:
+    case CMD_JOY_BTN2:
+    case CMD_JOY_BTN3:
+    case CMD_JOY_BTN4:
+    case CMD_JOY_JOY1_LAYOUT:
+    case CMD_JOY_JOY1_FLAGS:
+    case CMD_JOY_JOY2_LAYOUT:
+    case CMD_JOY_JOY2_FLAGS:
+        joy_settings_write(sel_reg, value);
+        joy_config_to_flash(&joy_config, settings.joy_config_block);
+        break;
+#endif
     case CMD_GUSBUF: // GUS audio buffer size
         // Value is sent by pgusinit as the size - 1, so we need to add 1 back to it
         settings.GUS.audioBuffer = value + 1;
@@ -543,6 +585,31 @@ __force_inline uint8_t read_picogus_high(void) {
         return settings.CMS.basePort == 0xFFFF ? 0 : (settings.CMS.basePort >> 8);
     case CMD_JOYEN: // enable joystick
         return settings.Joy.basePort == 0x201u;
+#ifdef USB_JOYSTICK
+    case CMD_JOY_PROFILE:
+    case CMD_JOY_JOY1_DZ:
+    case CMD_JOY_JOY2_DZ:
+    case CMD_JOY_FLAGS:
+    case CMD_JOY_BTN1:
+    case CMD_JOY_BTN2:
+    case CMD_JOY_BTN3:
+    case CMD_JOY_BTN4:
+    case CMD_JOY_JOY1_LAYOUT:
+    case CMD_JOY_JOY1_FLAGS:
+    case CMD_JOY_JOY2_LAYOUT:
+    case CMD_JOY_JOY2_FLAGS:
+        return joy_settings_read(sel_reg);
+    case CMD_JOY_LAST_BTN: {
+        uint8_t v = joy_last_btn;
+        joy_last_btn = 0xFF; // auto-clear after read
+        return v;
+    }
+    case CMD_JOY_EFF_BTN1:
+    case CMD_JOY_EFF_BTN2:
+    case CMD_JOY_EFF_BTN3:
+    case CMD_JOY_EFF_BTN4:
+        return joy_settings_read(sel_reg);
+#endif
     case CMD_GUSBUF: // GUS audio buffer size
         return settings.GUS.audioBuffer - 1;
     case CMD_GUSDMA: // GUS DMA interval
@@ -676,6 +743,11 @@ void processSettings(void) {
     sermouse_set_protocol(settings.Mouse.protocol);
     sermouse_set_report_rate_hz(settings.Mouse.reportRate);
     sermouse_set_sensitivity(settings.Mouse.sensitivity);
+#endif
+#ifdef USB_JOYSTICK
+    // Load joystick config from flash if the magic is valid; otherwise keep
+    // the compile-time defaults already set in hid_app.c.
+    joy_config_from_flash(&joy_config, settings.joy_config_block);
 #endif
 #ifdef CDROM
     cdrom_port_test = settings.CD.basePort >> 4;
@@ -1240,7 +1312,7 @@ extern void PIC_DeActivateIRQ(void);
 
 #ifdef USB_JOYSTICK
     // Init joystick as centered with no buttons pressed
-    joystate_struct = {127, 127, 127, 127, 0xf};
+    joystate_struct = {127, 127, 127, 127, 0xf0};
     puts("Config joystick PWM");
     pwm_config pwm_c = pwm_get_default_config();
     // TODO better calibrate this

@@ -32,6 +32,7 @@
 
 #ifdef USB_STACK
 #include "tusb.h"
+#include "joy.h"
 #endif
 
 #ifdef PSRAM
@@ -137,6 +138,14 @@ void play_gus() {
 #ifdef USB_STACK
     // Init TinyUSB for joystick support
     tuh_init(BOARD_TUH_RHPORT);
+    // Pump USB events for ~500 ms so any device already connected at boot
+    // (power-cycle case) is fully enumerated before the audio loop starts.
+    // Without this, take_audio_buffer(true) can block long enough that the
+    // TinyUSB state machine never advances past the initial connect event.
+    {
+        uint32_t deadline = time_us_32() + 500000u;
+        while (time_us_32() < deadline) tuh_task();
+    }
 #endif
 
 #ifdef SOUND_MPU
@@ -153,7 +162,16 @@ void play_gus() {
             // todo hack overwriting const
             ((struct audio_format *) ap->format)->sample_freq = playback_rate;
         }
-        struct audio_buffer *buffer = take_audio_buffer(ap, true);
+        // Non-blocking poll: interleave tuh_task() while waiting for the next
+        // audio buffer so USB hot-plug events are processed immediately rather
+        // than waiting up to one full buffer period (~6 ms at 44100 Hz).
+        struct audio_buffer *buffer;
+        while (!(buffer = take_audio_buffer(ap, false))) {
+#ifdef USB_STACK
+            tuh_task();
+            usb_hotplug_task();
+#endif
+        }
         int16_t *samples = (int16_t *) buffer->buffer->bytes;
 
         // uint32_t gus_audio_begin = time_us_32();
@@ -172,10 +190,6 @@ void play_gus() {
         */
         // gpio_xor_mask(1u << PICO_DEFAULT_LED_PIN);
         give_audio_buffer(ap, buffer);
-#ifdef USB_STACK
-        // Service TinyUSB events
-        tuh_task();
-#endif
 #ifdef SOUND_MPU
         // Calculate number of midi bytes to send at current sample rate and number of samples generated
         send_midi_bytes(MAX(31250 * sample_count / playback_rate + 1, 8));

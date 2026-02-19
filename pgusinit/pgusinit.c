@@ -38,6 +38,8 @@ static bool is_console;
 static uint8_t page_lines;
 
 #include "../common/picogus.h"
+#include "joy_ini.h"
+#include "joy_wizard.h"
 
 
 const uint8_t get_screen_lines(void)
@@ -85,7 +87,17 @@ static void usage(card_mode_t mode, bool print_all)
     pageprintf("   /save         - save settings to the card to persist on system boot\n");
     pageprintf("   /defaults     - set all settings for all modes to defaults\n");
     pageprintf("   /wtvol x      - set volume of WT header. 0-100, Default 100 (2.0 cards only)\n");
-    pageprintf("   /joy 1|0      - enable/disable USB joystick support, Default: 0\n");
+    pageprintf("   /joy 1|0          - enable/disable USB joystick support, Default: 0\n");
+    pageprintf("   /joyprofile x     - set axis routing profile\n");
+    pageprintf("                       profiles: gamepad, throttle, ch_flightstick, fcs\n");
+    pageprintf("   /joylayout x      - set button layout (controller type)\n");
+    pageprintf("                       layouts: gamepad, snes\n");
+    pageprintf("                       prefix p1: or p2: to set per-player, e.g. p1:snes\n");
+    pageprintf("   /joywizard p1|p2  - interactive button mapping wizard\n");
+    pageprintf("                       press each button on your controller to assign it\n");
+    pageprintf("   /joyini f         - load joystick config from INI file f\n");
+    pageprintf("   /joystatus        - print current joystick config\n");
+    pageprintf("   (use /save to persist any joystick settings to flash)\n");
     pageprintf("   /mainvol x    - set the main audio volume: 0 - 100\n");
     //         "...............................................................................\n"
     pageprintf("MPU-401 settings:\n");
@@ -843,6 +855,54 @@ static bool cmdSave(const char* arg, const int cmd)
     return true;
 }
 
+static bool cmdJoyIni(const char* arg, const int cmd)
+{
+    return joy_ini_load(arg) == 0;
+}
+
+static bool cmdJoyStatus(const char* arg, const int cmd)
+{
+    joy_ini_print_status();
+    return true;
+}
+
+static bool cmdJoyProfile(const char* arg, const int cmd)
+{
+    return joy_ini_set_profile(arg) == 0;
+}
+
+static bool cmdJoyLayout(const char* arg, const int cmd)
+{
+    char buf[64];
+    strncpy(buf, arg, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+
+    if (!strnicmp(buf, "p1:", 3)) {
+        uint8_t layout = joy_ini_parse_layout(buf + 3);
+        joy_ini_send(CMD_JOY_JOY1_LAYOUT, layout);
+        printf("Player 1 button layout set to '%s'. Use /save to persist.\n", buf + 3);
+    } else if (!strnicmp(buf, "p2:", 3)) {
+        uint8_t layout = joy_ini_parse_layout(buf + 3);
+        joy_ini_send(CMD_JOY_JOY2_LAYOUT, layout);
+        printf("Player 2 button layout set to '%s'. Use /save to persist.\n", buf + 3);
+    } else {
+        uint8_t layout = joy_ini_parse_layout(buf);
+        joy_ini_send(CMD_JOY_JOY1_LAYOUT, layout);
+        joy_ini_send(CMD_JOY_JOY2_LAYOUT, layout);
+        printf("Button layout set to '%s' for both players. Use /save to persist.\n", buf);
+    }
+    return true;
+}
+
+static bool cmdJoyWizard(const char* arg, const int cmd)
+{
+    int player = 1;
+    if (arg && (!stricmp(arg, "p2") || !strcmp(arg, "2"))) {
+        player = 2;
+    }
+    return joy_wizard_run(player) == 0;
+}
+
 ParseCommand parseCommandsMinimal[] = {
     {"/?", cmdDisplayUsage, 0, ARG_NONE},
     {"/??", cmdDisplayUsage, 1, ARG_NONE},
@@ -861,6 +921,11 @@ ParseCommand parseCommands[] = {
     {"/?", cmdDisplayUsage, 0, ARG_NONE},
     {"/??", cmdDisplayUsage, 1, ARG_NONE},
     {"/joy", cmdSendBool, CMD_JOYEN, ARG_REQUIRE},
+    {"/joyprofile", cmdJoyProfile, 0, ARG_REQUIRE},
+    {"/joylayout", cmdJoyLayout, 0, ARG_REQUIRE},
+    {"/joywizard", cmdJoyWizard, 0, ARG_REQUIRE, "p1"},
+    {"/joyini", cmdJoyIni, 0, ARG_REQUIRE},
+    {"/joystatus", cmdJoyStatus, 0, ARG_NONE},
     {"/mode", cmdSetMode, 0, ARG_REQUIRE},
     {"/wtvol", cmdSetVol, CMD_WTVOL, ARG_REQUIRE},
     {"/gus44k", cmdSendBool, CMD_GUS44K, ARG_REQUIRE, "false"},
