@@ -95,6 +95,34 @@ static const char *modenames[8] = {
 #define CMD_GUSVOL     0x74 // GUS Volume
 #define CMD_PSGVOL     0x75 // PSG Volume
 
+// Joystick config commands (0x80-0x8F range)
+// Handled by joy_settings.h (firmware) and joy_ini.h (pgusinit).
+//
+// profile = axis routing only: GAMEPAD(0), THROTTLE(1), CH_FLIGHTSTICK(2), FCS(3)
+//
+// btn_layout selects a USB controller type table that maps DOS buttons 1-4
+// to HID indices for that controller.  joy1_btn_layout applies to player 1,
+// joy2_btn_layout to player 2.  Built-in layouts: GAMEPAD(0), SNES(1).
+// SNES layout uses 1-based HID indices (B=1,A=9,Y=2,X=10).
+// When layout=GAMEPAD the btn1-4 fields are used directly for custom mapping.
+#define CMD_JOY_PROFILE     0x80 // JOY_PROFILE_* (axis routing)
+#define CMD_JOY_JOY1_DZ     0x81 // joy1 dead zone 0-127, 0=off
+#define CMD_JOY_JOY2_DZ     0x82 // joy2 dead zone 0-127, 0=off
+#define CMD_JOY_FLAGS       0x83 // bit0=swap_throttle_rudder
+#define CMD_JOY_BTN1        0x84 // custom HID index for DOS button 1 (overrides layout table)
+#define CMD_JOY_BTN2        0x85 // custom HID index for DOS button 2
+#define CMD_JOY_BTN3        0x86 // custom HID index for DOS button 3
+#define CMD_JOY_BTN4        0x87 // custom HID index for DOS button 4
+#define CMD_JOY_JOY1_LAYOUT 0x88 // JOY_BTN_LAYOUT_* for player 1
+#define CMD_JOY_JOY1_FLAGS  0x89 // bit0=invert_joy1_y
+#define CMD_JOY_JOY2_LAYOUT 0x8A // JOY_BTN_LAYOUT_* for player 2
+#define CMD_JOY_JOY2_FLAGS  0x8B // bit0=invert_joy2_y
+#define CMD_JOY_LAST_BTN    0x8C // read: last HID button index pressed (0xFF=none); auto-clears on read
+#define CMD_JOY_EFF_BTN1    0x8D // read-only: effective HID index for DOS btn1 (resolved from layout+btn1)
+#define CMD_JOY_EFF_BTN2    0x8E // read-only: effective HID index for DOS btn2
+#define CMD_JOY_EFF_BTN3    0x8F // read-only: effective HID index for DOS btn3
+#define CMD_JOY_EFF_BTN4    0x90 // read-only: effective HID index for DOS btn4
+
 #define CMD_DEFAULTS   0xE0 // Select reset to defaults register
 #define CMD_SAVE       0xE1 // Select save settings register
 #define CMD_REBOOT     0xE2 // Select reboot register

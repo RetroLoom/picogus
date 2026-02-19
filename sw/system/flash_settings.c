@@ -126,6 +126,11 @@ static const VersionFields versionFieldsTable[] = {
     {(const FieldInfo[]){
         FIELD(Volume),
     }, 1},
+
+    // version 5 - added joy_config_block[20] at end of Settings struct
+    {(const FieldInfo[]){
+        FIELD(joy_config_block),
+    }, 1},
 };
 
 // Apply default values only to fields introduced after the given version

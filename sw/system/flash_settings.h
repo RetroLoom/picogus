@@ -25,7 +25,7 @@ extern "C" {
 #include <stdbool.h>
 
 #define SETTINGS_MAGIC 0x70677573  // "pgus" in ascii
-#define SETTINGS_VERSION 4
+#define SETTINGS_VERSION 5
 
 // When adding new fields to Settings struct:
 // 1. Increment SETTINGS_VERSION
@@ -95,6 +95,7 @@ typedef struct Settings {
         uint8_t gusVol;
         uint8_t psgVol;
     } Volume;
+    uint8_t joy_config_block[20]; // serialised joy_config_t (see joy_settings.h)
 } Settings;
 
 

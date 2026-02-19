@@ -56,6 +56,7 @@ extern cms_buffer_t opl_cmd_buffer;
 
 #ifdef USB_STACK
 #include "tusb.h"
+#include "joy.h"
 #endif
 #ifdef USB_MOUSE
 #include "mouse/8250uart.h"
@@ -232,6 +233,7 @@ void play_adlib() {
 #ifdef USB_STACK
         // Service TinyUSB events
         tuh_task();
+        usb_hotplug_task();
 #endif
 #ifdef USB_MOUSE
         // mouse task

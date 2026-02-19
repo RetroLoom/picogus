@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #include "tusb.h"
+#include "joy.h"
 #include "mouse/8250uart.h"
 #include "mouse/sermouse.h"
 
@@ -96,6 +97,7 @@ void play_usb() {
 #ifdef CDROM
     struct audio_buffer_pool *ap = init_audio();
 #endif
+
     for (;;) {
 #ifdef CDROM
         if (cdrom.cd_status == CD_STATUS_PLAYING) {
@@ -123,6 +125,7 @@ void play_usb() {
 #endif // CDROM
         // tinyusb host task
         tuh_task();
+        usb_hotplug_task();
 
         // mouse task
         sermouse_core1_task();
