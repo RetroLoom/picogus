@@ -80,10 +80,10 @@ static int joy_wizard_run(int player) {
     int i;
     /* Descriptions by physical position — controller labels in parentheses */
     static const char* const dos_btn_names[] = {
-        "DOS button 1 — SOUTH / bottom  (Xbox:A  PS:Cross    SNES:B  Gravis:1)",
-        "DOS button 2 — EAST  / right   (Xbox:B  PS:Circle   SNES:A  Gravis:2)",
-        "DOS button 3 — WEST  / left    (Xbox:X  PS:Square   SNES:Y  Gravis:3)",
-        "DOS button 4 — NORTH / top     (Xbox:Y  PS:Triangle SNES:X  Gravis:4)",
+        "DOS button 1 - SOUTH / bottom  (Xbox:A  PS:Cross    SNES:B  Gravis:1)",
+        "DOS button 2 - EAST  / right   (Xbox:B  PS:Circle   SNES:A  Gravis:2)",
+        "DOS button 3 - WEST  / left    (Xbox:X  PS:Square   SNES:Y  Gravis:3)",
+        "DOS button 4 - NORTH / top     (Xbox:Y  PS:Triangle SNES:X  Gravis:4)",
     };
     static const uint8_t btn_cmds[] = {
         CMD_JOY_BTN1, CMD_JOY_BTN2, CMD_JOY_BTN3, CMD_JOY_BTN4
